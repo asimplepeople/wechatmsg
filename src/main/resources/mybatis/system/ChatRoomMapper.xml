@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.system.room.mapper.ChatRoomMapper">
+    
+    <resultMap type="ChatRoom" id="ChatRoomResult">
+        <result property="id"    column="id"    />
+        <result property="themeName"    column="theme_name"    />
+        <result property="creationTime"    column="creation_time"    />
+        <result property="modifyTime"    column="modify_time"    />
+    </resultMap>
+
+    <resultMap id="ChatRoomChatRoomUserReleResult" type="ChatRoom" extends="ChatRoomResult">
+        <collection property="chatRoomUserReleList" notNullColumn="chat_room_id" javaType="java.util.List" resultMap="ChatRoomUserReleResult" />
+    </resultMap>
+
+    <resultMap type="ChatRoomUserRele" id="ChatRoomUserReleResult">
+        <result property="chatRoomId"    column="chat_room_id"    />
+        <result property="chatUserId"    column="chat_user_id"    />
+        <result property="creationTime"    column="creation_time"    />
+    </resultMap>
+
+    <sql id="selectChatRoomVo">
+        select id, theme_name, creation_time, modify_time from chat_room
+    </sql>
+
+    <select id="selectChatRoomList" parameterType="ChatRoom" resultMap="ChatRoomResult">
+        <include refid="selectChatRoomVo"/>
+        <where>  
+            <if test="themeName != null  and themeName != ''"> and theme_name like concat('%', #{themeName}, '%')</if>
+            <if test="creationTime != null "> and creation_time = #{creationTime}</if>
+            <if test="modifyTime != null "> and modify_time = #{modifyTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectChatRoomById" parameterType="Long" resultMap="ChatRoomChatRoomUserReleResult">
+        select a.id, a.theme_name, a.creation_time, a.modify_time,
+            b.chat_room_id, b.chat_user_id, b.creation_time
+        from chat_room a
+        left join chat_room_user_rele b on b.chat_room_id = a.id
+        where a.id = #{id}
+    </select>
+        
+    <insert id="insertChatRoom" parameterType="ChatRoom" useGeneratedKeys="true" keyProperty="id">
+        insert into chat_room
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="themeName != null and themeName != ''">theme_name,</if>
+            <if test="creationTime != null">creation_time,</if>
+            <if test="modifyTime != null">modify_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="themeName != null and themeName != ''">#{themeName},</if>
+            <if test="creationTime != null">#{creationTime},</if>
+            <if test="modifyTime != null">#{modifyTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateChatRoom" parameterType="ChatRoom">
+        update chat_room
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="themeName != null and themeName != ''">theme_name = #{themeName},</if>
+            <if test="creationTime != null">creation_time = #{creationTime},</if>
+            <if test="modifyTime != null">modify_time = #{modifyTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteChatRoomById" parameterType="Long">
+        delete from chat_room where id = #{id}
+    </delete>
+
+    <delete id="deleteChatRoomByIds" parameterType="String">
+        delete from chat_room where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteChatRoomUserReleByChatRoomIds" parameterType="String">
+        delete from chat_room_user_rele where chat_room_id in 
+        <foreach item="chatRoomId" collection="array" open="(" separator="," close=")">
+            #{chatRoomId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteChatRoomUserReleByChatRoomId" parameterType="Long">
+        delete from chat_room_user_rele where chat_room_id = #{chatRoomId}
+    </delete>
+
+    <insert id="batchChatRoomUserRele">
+        insert into chat_room_user_rele( chat_room_id, chat_user_id, creation_time) values
+		<foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.chatRoomId}, #{item.chatUserId}, #{item.creationTime})
+        </foreach>
+    </insert>
+
+</mapper>
